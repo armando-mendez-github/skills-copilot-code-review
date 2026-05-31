@@ -5,8 +5,9 @@ Endpoints for the High School Management System API
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from typing import Dict, Any, Optional, List
+from datetime import date
 
-from ..database import activities_collection, teachers_collection
+from ..database import activities_collection, teachers_collection, announcements_collection
 
 router = APIRouter(
     prefix="/activities",
@@ -47,6 +48,39 @@ def get_activities(
         activities[name] = activity
 
     return activities
+
+
+def _parse_iso_date(value: Optional[str]) -> Optional[date]:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+@router.get("/announcement", response_model=Dict[str, Any])
+def get_announcement() -> Dict[str, Any]:
+    """Get the current wellness announcement"""
+    announcement = announcements_collection.find_one({}, {"_id": 0})
+    if not announcement:
+        return {"message": "", "start_date": None, "end_date": None, "is_active": False}
+
+    start_date = _parse_iso_date(announcement.get("start_date"))
+    end_date = _parse_iso_date(announcement.get("end_date"))
+    today = date.today()
+    is_active = (
+        bool(announcement.get("message"))
+        and (start_date is None or today >= start_date)
+        and (end_date is None or today <= end_date)
+    )
+
+    return {
+        "message": announcement.get("message", "") if is_active else "",
+        "start_date": announcement.get("start_date"),
+        "end_date": announcement.get("end_date"),
+        "is_active": is_active,
+    }
 
 
 @router.get("/days", response_model=List[str])

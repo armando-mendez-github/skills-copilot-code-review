@@ -12,8 +12,16 @@
     />
   </head>
   <body>
-    <div class="announcement-banner">
-      📢 Activity registration is open until the end of the month. Don't lose your spot!
+    <div
+      class="announcement-banner"
+      id="announcement-banner"
+      role="status"
+      aria-live="polite"
+      aria-label="Important activity announcement"
+      hidden
+    >
+      <span aria-hidden="true">📢</span>
+      <span id="announcement-message"></span>
     </div>
     <header>
       <h1>Mergington High School</h1>
