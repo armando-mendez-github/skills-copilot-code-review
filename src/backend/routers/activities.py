@@ -62,24 +62,37 @@ def _parse_iso_date(value: Optional[str]) -> Optional[date]:
 @router.get("/announcement", response_model=Dict[str, Any])
 def get_announcement() -> Dict[str, Any]:
     """Get the current announcement"""
-    announcement = announcements_collection.find_one({}, {"_id": 0})
-    if not announcement:
+    today = date.today()
+    candidates = []
+    for announcement in announcements_collection.find({}, {"_id": 0}):
+        start_date = _parse_iso_date(announcement.get("start_date"))
+        end_date = _parse_iso_date(announcement.get("end_date"))
+        is_active = (
+            bool(announcement.get("message"))
+            and end_date is not None
+            and (start_date is None or today >= start_date)
+            and today <= end_date
+        )
+        if is_active:
+            candidates.append(announcement)
+
+    if not candidates:
         return {"message": "", "start_date": None, "end_date": None, "is_active": False}
 
-    start_date = _parse_iso_date(announcement.get("start_date"))
-    end_date = _parse_iso_date(announcement.get("end_date"))
-    today = date.today()
-    is_active = (
-        bool(announcement.get("message"))
-        and (start_date is None or today >= start_date)
-        and (end_date is None or today <= end_date)
+    candidates.sort(
+        key=lambda doc: (
+            doc.get("start_date") or "0000-00-00",
+            doc.get("end_date") or "0000-00-00",
+        ),
+        reverse=True,
     )
+    announcement = candidates[0]
 
     return {
-        "message": announcement.get("message", "") if is_active else "",
+        "message": announcement.get("message", ""),
         "start_date": announcement.get("start_date"),
         "end_date": announcement.get("end_date"),
-        "is_active": is_active,
+        "is_active": True,
     }
 
 
