@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const activityInput = document.getElementById("activity");
   const closeRegistrationModal = document.querySelector(".close-modal");
+  const announcementBanner = document.getElementById("announcement-banner");
+  const announcementMessage = document.getElementById("announcement-message");
 
   // Search and filter elements
   const searchInput = document.getElementById("activity-search");
@@ -96,6 +98,27 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     fetchActivities();
+  }
+
+  async function loadAnnouncement() {
+    try {
+      const response = await fetch("/activities/announcement");
+      if (!response.ok) {
+        announcementBanner.hidden = true;
+        return;
+      }
+
+      const announcement = await response.json();
+      if (announcement.is_active && announcement.message) {
+        announcementMessage.textContent = announcement.message;
+        announcementBanner.hidden = false;
+      } else {
+        announcementBanner.hidden = true;
+      }
+    } catch (error) {
+      announcementBanner.hidden = true;
+      console.error("Error loading announcement:", error);
+    }
   }
 
   // Check if user is already logged in (from localStorage)
@@ -864,5 +887,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize app
   checkAuthentication();
   initializeFilters();
+  loadAnnouncement();
   fetchActivities();
 });
