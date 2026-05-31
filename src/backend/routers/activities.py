@@ -61,7 +61,7 @@ def _parse_iso_date(value: Optional[str]) -> Optional[date]:
 
 @router.get("/announcement", response_model=Dict[str, Any])
 def get_announcement() -> Dict[str, Any]:
-    """Get the current wellness announcement"""
+    """Get the current announcement"""
     announcement = announcements_collection.find_one({}, {"_id": 0})
     if not announcement:
         return {"message": "", "start_date": None, "end_date": None, "is_active": False}
