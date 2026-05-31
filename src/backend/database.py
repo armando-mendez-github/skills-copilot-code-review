@@ -53,7 +53,7 @@ def init_database():
 
     # Initialize announcements if empty
     if announcements_collection.count_documents({}) == 0:
-        announcements_collection.insert_one(initial_announcement)
+        announcements_collection.insert_many(initial_announcements)
 
 
 # Initial database if empty
@@ -213,8 +213,10 @@ initial_teachers = [
     }
 ]
 
-initial_announcement = {
-    "message": "Register now for our next wellness challenge! Deadline: June 15, 2026.",
-    "start_date": "2026-05-31",
-    "end_date": "2026-06-15"
-}
+initial_announcements = [
+    {
+        "message": "Register now for our next wellness challenge! Deadline: June 15, 2026.",
+        "start_date": "2026-05-31",
+        "end_date": "2026-06-15"
+    }
+]
