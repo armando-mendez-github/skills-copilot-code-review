@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentUser = JSON.parse(savedUser);
         updateAuthUI();
         // Verify the stored user with the server
-        validateUserSession(currentUser.username);
+        validateUserSession();
       } catch (error) {
         console.error("Error parsing saved user", error);
         logout(); // Clear invalid data
@@ -173,11 +173,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Validate user session with the server
-  async function validateUserSession(username) {
+  async function validateUserSession() {
+    if (!currentUser?.session_token) {
+      logout();
+      return;
+    }
+
     try {
-      const response = await fetch(
-        `/auth/check-session?username=${encodeURIComponent(username)}`
-      );
+      const response = await fetch("/auth/check-session", {
+        headers: {
+          "X-Session-Token": currentUser.session_token,
+        },
+      });
 
       if (!response.ok) {
         // Session invalid, log out
@@ -375,11 +382,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch(
-        `/announcements?manager_username=${encodeURIComponent(
-          currentUser.username
-        )}`
-      );
+      const response = await fetch("/announcements", {
+        headers: {
+          "X-Session-Token": currentUser.session_token,
+        },
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch announcements");
       }
@@ -449,10 +456,13 @@ document.addEventListener("DOMContentLoaded", () => {
       async () => {
         try {
           const response = await fetch(
-            `/announcements/${encodeURIComponent(
-              announcementId
-            )}?manager_username=${encodeURIComponent(currentUser.username)}`,
-            { method: "DELETE" }
+            `/announcements/${encodeURIComponent(announcementId)}`,
+            {
+              method: "DELETE",
+              headers: {
+                "X-Session-Token": currentUser.session_token,
+              },
+            }
           );
 
           const result = await response.json();
@@ -519,18 +529,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const method = editingId ? "PUT" : "POST";
 
     try {
-      const response = await fetch(
-        `${endpoint}?manager_username=${encodeURIComponent(
-          currentUser.username
-        )}`,
-        {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Token": currentUser.session_token,
+        },
+        body: JSON.stringify(payload),
+      });
 
       const result = await response.json();
       if (!response.ok) {

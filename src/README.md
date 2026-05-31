@@ -34,10 +34,10 @@ A super simple FastAPI application that allows students to view and sign up for 
 | GET    | `/activities`                                                     | Get all activities with their details and current participant count |
 | POST   | `/activities/{activity_name}/signup?email=student@mergington.edu` | Sign up for an activity                                             |
 | GET    | `/announcements/active`                                           | Get the currently active announcement for the banner                |
-| GET    | `/announcements?manager_username={username}`                      | List all announcements (signed-in users only)                      |
-| POST   | `/announcements?manager_username={username}`                      | Create a new announcement (signed-in users only)                   |
-| PUT    | `/announcements/{announcement_id}?manager_username={username}`    | Update an existing announcement (signed-in users only)             |
-| DELETE | `/announcements/{announcement_id}?manager_username={username}`    | Delete an announcement (signed-in users only)                      |
+| GET    | `/announcements`                                                  | List all announcements (requires `X-Session-Token`)                |
+| POST   | `/announcements`                                                  | Create a new announcement (requires `X-Session-Token`)             |
+| PUT    | `/announcements/{announcement_id}`                                | Update an existing announcement (requires `X-Session-Token`)       |
+| DELETE | `/announcements/{announcement_id}`                                | Delete an announcement (requires `X-Session-Token`)                |
 
 ## Data Model
 

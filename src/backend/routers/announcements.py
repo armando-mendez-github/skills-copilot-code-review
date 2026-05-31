@@ -4,10 +4,11 @@ from datetime import date
 from typing import Any, Dict, List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from ..database import announcements_collection, teachers_collection
+from ..database import announcements_collection
+from .auth import get_teacher_from_session_token
 
 router = APIRouter(prefix="/announcements", tags=["announcements"])
 
@@ -29,13 +30,8 @@ def _parse_iso_date(value: Optional[str]) -> Optional[date]:
         return None
 
 
-def _assert_signed_in(username: Optional[str]) -> None:
-    if not username:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
-    teacher = teachers_collection.find_one({"_id": username})
-    if not teacher:
-        raise HTTPException(status_code=401, detail="Invalid teacher credentials")
+def _assert_signed_in(session_token: Optional[str]) -> None:
+    get_teacher_from_session_token(session_token)
 
 
 def _validate_dates(start_date_str: Optional[str], end_date_str: str) -> None:
@@ -83,10 +79,10 @@ def _is_active(doc: Dict[str, Any], today: date) -> bool:
 @router.get("", response_model=List[Dict[str, Any]])
 @router.get("/", response_model=List[Dict[str, Any]])
 def list_announcements(
-    manager_username: Optional[str] = Query(None),
+    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
 ) -> List[Dict[str, Any]]:
     """List all announcements for management views."""
-    _assert_signed_in(manager_username)
+    _assert_signed_in(x_session_token)
     docs = announcements_collection.find().sort("end_date", 1)
     return [_serialize_announcement(doc) for doc in docs]
 
@@ -127,10 +123,10 @@ def get_active_announcement() -> Dict[str, Any]:
 @router.post("/", response_model=Dict[str, Any])
 def create_announcement(
     payload: AnnouncementPayload,
-    manager_username: Optional[str] = Query(None),
+    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
 ) -> Dict[str, Any]:
     """Create a new announcement. Requires a signed-in teacher."""
-    _assert_signed_in(manager_username)
+    _assert_signed_in(x_session_token)
 
     message = payload.message.strip()
     if not message:
@@ -154,10 +150,10 @@ def create_announcement(
 def update_announcement(
     announcement_id: str,
     payload: AnnouncementPayload,
-    manager_username: Optional[str] = Query(None),
+    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
 ) -> Dict[str, Any]:
     """Update an announcement. Requires a signed-in teacher."""
-    _assert_signed_in(manager_username)
+    _assert_signed_in(x_session_token)
 
     message = payload.message.strip()
     if not message:
@@ -195,10 +191,10 @@ def update_announcement(
 @router.delete("/{announcement_id}", response_model=Dict[str, str])
 def delete_announcement(
     announcement_id: str,
-    manager_username: Optional[str] = Query(None),
+    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
 ) -> Dict[str, str]:
     """Delete an announcement. Requires a signed-in teacher."""
-    _assert_signed_in(manager_username)
+    _assert_signed_in(x_session_token)
 
     try:
         object_id = ObjectId(announcement_id)
